@@ -1,0 +1,5 @@
+Após a instalação do mysql se dê esse erro:
+MySQL 8.0 - Client does not support authentication protocol requested by server; consider upgrading MySQL client
+de autenticação, rodem esse script na sua database que funcionará.
+
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'sua senha local do banco';
