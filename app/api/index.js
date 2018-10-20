@@ -19,17 +19,19 @@ api.scriptInicial = (req, res) => {
         status bit not null default 0,
         nota int not null,
         telefone varchar(200) not null
-        )`);
+        )`
+        , () => {
+});
 
-    console.log('Data Base criada');
-    res.json({ result: "O script de carga inicial foi rodado e o banco está pronto para uso" });
+console.log('Data Base criada');
+res.json({ result: "O script de carga inicial foi rodado e o banco está pronto para uso" });
 
-    con.end();
+
 }
 
 api.listaJogadores = function (req, res) {
-    con.query('select * from jogador order by nome', function (error, results, fields) {
-        if (error) throw error;
+    con.query('select * from jogador;', function (error, results, fields) {
+        if (error) error;
         res.json(results);
     });
 }
@@ -42,22 +44,24 @@ api.inserirJogador = function (req, res) {
     var values = [[jogador.cpf, jogador.nome, jogador.idade, 0, 0, jogador.telefone]];
 
     con.query(sql, [values], function (err, result) {
-        if (err) throw err;
-        console.log("Number of records inserted: " + result.affectedRows);
-
-        res.json({ msg: "Jogador cadastrado" });
+        if (err) {
+            res.json({ code: 500, message: err });
+        } else {
+            console.log("Number of records inserted: " + result.affectedRows);
+            res.json({ code: 200, message: "Jogador cadastrado" });
+        }
     });
-
-    con.end();
 
 }
 
 api.deletarJogador = function (req, res) {
     con.query('DELETE FROM jogador where cpf = ' + req.params.cpf, function (error, results, fields) {
-        if (error) throw error;
-        res.json(results.affectedRows);
+        if (error) {
+            res.json({ code: 500, message: error })
+        } else {
+            res.json({ code: 200, message: 'O Jogador foi excluído com sucesso' });
+        }
     });
-    con.end();
 }
 
 api.sortearTimes = function (req, res) {
@@ -85,23 +89,23 @@ api.verificarBolaMuchaDaPelada = function (req, res) {
 
 }
 
-api.exibirHistoricoMelhorJogadorBaseadoEmTempo = function (req, res){
+api.exibirHistoricoMelhorJogadorBaseadoEmTempo = function (req, res) {
 
 }
 
-api.exibirHistoricoPiorJogadorBaseadoEmTempo = function (req, res){
+api.exibirHistoricoPiorJogadorBaseadoEmTempo = function (req, res) {
 
 }
 
-api.jogadorQueFezMaisGols = function (req, res){
+api.jogadorQueFezMaisGols = function (req, res) {
 
 }
 
-api.gravarAposta = function (req, res){
+api.gravarAposta = function (req, res) {
 
 }
 
-api.exibirResultadoAposta = function (req, res){
+api.exibirResultadoAposta = function (req, res) {
 
 }
 
