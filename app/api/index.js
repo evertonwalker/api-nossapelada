@@ -19,19 +19,51 @@ api.scriptInicial = (req, res) => {
         status bit not null default 0,
         nota int not null,
         telefone varchar(200) not null
-        )`
-        , () => {
-});
+        );    
+        
+        CREATE TABLE pagamento(
+        CdPagamento int not null AUTO_INCREMENT,
+        valor int not null,
+        cpfJogador int not null,
+        data TIMESTAMP default current_timestamp(),
+        PRIMARY KEY(CdPagamento),
+        FOREIGN KEY(cpfJogador) REFERENCES Jogador(cpf) 
+        ); `, function(error, results, fields){
+            if(error) console.log('Error : ' + error);
+            console.log('Resultado : ' + results);              
+            console.log('Data Base criada');
+            res.json({ result: "O script de carga inicial foi rodado e o banco está pronto para uso" });
+        }) ;
+    con.end();
+}
 
-console.log('Data Base criada');
-res.json({ result: "O script de carga inicial foi rodado e o banco está pronto para uso" });
+api.cadastraPagamento = function(req,res){
+    pagamento = req.body;
+    var sql = "INSERT INTO Pagamento (valor, cpfJogador) VALUES ?";
+    var values = [[pagamento.valor, req.params.cpf]];
+    con.query(sql, [values], function(err, result){
+        if (err) throw err;
+        console.log("Number of records inserted" + result.affectedRows);
+        
+        res.json({msg : "Pagamento Cadastrado"});
+    });
 
+    con.end();
+}
+
+api.listaPagamentos = function(req, res){
+    con.query('SELECT * FROM Pagamento', function(err, results){
+        if(err) throw error;
+        res.json(results);
+    });
+    
+    con.end();
 
 }
 
 api.listaJogadores = function (req, res) {
-    con.query('select * from jogador;', function (error, results, fields) {
-        if (error) error;
+    con.query('select * from jogador order by nome', function (error, results, fields) {
+        if (error) throw error;
         res.json(results);
     });
 }
@@ -44,24 +76,22 @@ api.inserirJogador = function (req, res) {
     var values = [[jogador.cpf, jogador.nome, jogador.idade, 0, 0, jogador.telefone]];
 
     con.query(sql, [values], function (err, result) {
-        if (err) {
-            res.json({ code: 500, message: err });
-        } else {
-            console.log("Number of records inserted: " + result.affectedRows);
-            res.json({ code: 200, message: "Jogador cadastrado" });
-        }
+        if (err) throw err;
+        console.log("Number of records inserted: " + result.affectedRows);
+
+        res.json({ msg: "Jogador cadastrado" });
     });
+
+    con.end();
 
 }
 
 api.deletarJogador = function (req, res) {
     con.query('DELETE FROM jogador where cpf = ' + req.params.cpf, function (error, results, fields) {
-        if (error) {
-            res.json({ code: 500, message: error })
-        } else {
-            res.json({ code: 200, message: 'O Jogador foi excluído com sucesso' });
-        }
+        if (error) throw error;
+        res.json(results.affectedRows);
     });
+    con.end();
 }
 
 api.sortearTimes = function (req, res) {
@@ -89,23 +119,23 @@ api.verificarBolaMuchaDaPelada = function (req, res) {
 
 }
 
-api.exibirHistoricoMelhorJogadorBaseadoEmTempo = function (req, res) {
+api.exibirHistoricoMelhorJogadorBaseadoEmTempo = function (req, res){
 
 }
 
-api.exibirHistoricoPiorJogadorBaseadoEmTempo = function (req, res) {
+api.exibirHistoricoPiorJogadorBaseadoEmTempo = function (req, res){
 
 }
 
-api.jogadorQueFezMaisGols = function (req, res) {
+api.jogadorQueFezMaisGols = function (req, res){
 
 }
 
-api.gravarAposta = function (req, res) {
+api.gravarAposta = function (req, res){
 
 }
 
-api.exibirResultadoAposta = function (req, res) {
+api.exibirResultadoAposta = function (req, res){
 
 }
 
