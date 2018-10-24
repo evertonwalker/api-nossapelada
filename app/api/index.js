@@ -40,23 +40,65 @@ api.scriptInicial = (req, res) => {
     con.end();
 }
 
-api.cadastraPagamento = function(req,res){
-    pagamento = req.body;
+function inserirPagamento(valor, cpf, data){
     var sql = "INSERT INTO Pagamento (valor, cpfJogador, data) VALUES ?";
-    var values = [[pagamento.valor, req.params.cpf, pagamento.data]];
+    console.log(valor);
+    console.log(cpf);
+    console.log(data);
+    var values = [[valor, cpf, data]];
     con.query(sql, [values], function(err, result){
         if (err) throw err;
-        console.log("Number of records inserted" + result.affectedRows);
-        
-        res.json({msg : "Pagamento Cadastrado"});
-    });
+        return true;
+    });   
+}
 
-    con.end();
+
+api.cadastraPagamento = function(req,res){
+    pagamento = req.body;
+    con.query("SELECT MAX(data) data from pagamento WHERE cpfJogador = " + req.params.cpf, function(err, result, fields){
+        if(err) throw err;
+        if(result != null) {
+            console.log(result[0].data);
+            console.log(pagamento.data);
+            var date1 = new Date(result[0].data);
+            var date2 = new Date(pagamento.data);
+            var timeDiff = Math.abs(date2.getTime() - date1.getTime());
+            var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));          
+            console.log(diffDays);            
+            if( diffDays > 30 ) {
+                console.log("é maior que 30");
+                // if(inserirPagamento(pagamento.valor, req.params.cpf, pagamento.data)){
+                //     res.json({msg : "Pagamento Cadastrado"});
+                // }
+                var sql = "INSERT INTO Pagamento (valor, cpfJogador, data) VALUES ?";
+                var values = [[pagamento.valor, req.params.cpf, pagamento.data]];
+                con.query(sql, [values], function(err, resultado){
+                 if (err) throw err;
+                     console.log("Number of records inserted" + resultado.affectedRows);                    
+                     res.json({msg : "Pagamento Cadastrado"});                    
+                });
+            }else{
+                res.json({msg : "O Pagamento não pode ser registrado, pois ainda não se passaram 30 dias desde o pagamento anterior"})                
+            }
+        }
+        else{
+            var sql = "INSERT INTO Pagamento (valor, cpfJogador, data) VALUES ?";
+            var values = [[pagamento.valor, req.params.cpf, pagamento.data]];
+            con.query(sql, [values], function(err, resultado){
+             if (err) throw err;
+                 console.log("Number of records inserted" + resultado.affectedRows);                    
+                 res.json({msg : "Pagamento Cadastrado"});                    
+            });
+            
+        }
+    });  
+
+    
 }
 
 api.listaPagamentos = function(req, res){
     con.query('SELECT * FROM Pagamento', function(err, results){
-        if(err) throw error;
+        if(err) throw error;       
         res.json(results);
     });
     
@@ -66,8 +108,9 @@ api.listaPagamentos = function(req, res){
 
 api.listaJogadores = function (req, res) {
     con.query('select * from jogador order by nome', function (error, results, fields) {
-        if (error) throw error;
+        if (error) throw error;        
         res.json(results);
+        
     });
 }
 
