@@ -20,7 +20,7 @@ module.exports  = function(app) {
     app.route('/api/pagamento/')
     .get(api.listaPagamentos);
 
-    app.route('/api/pagamento/:cpf')
+    app.route('/api/pagamento/')
     .post(api.cadastraPagamento);
 
 };
