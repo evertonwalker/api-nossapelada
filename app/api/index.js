@@ -20,7 +20,7 @@ api.scriptInicial = (req, res) => {
         nota int not null,
         telefone varchar(200) not null
         );    
-        
+        UNION 
         CREATE TABLE IF NOT  EXISTS pagamento(
         CdPagamento int not null AUTO_INCREMENT,
         valor int not null,
@@ -37,7 +37,7 @@ api.scriptInicial = (req, res) => {
                 res.end();
             }
         });        
-    con.end();
+
 }
 
 function inserirPagamento(valor, cpf, data){
@@ -49,7 +49,7 @@ function inserirPagamento(valor, cpf, data){
     con.query(sql, [values], function(err, result){
         if (err) throw err;
         return true;
-    });   
+    }) 
 }
 
 
