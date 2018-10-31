@@ -20,7 +20,7 @@ api.scriptInicial = (req, res) => {
         nota int not null,
         telefone varchar(200) not null
         );    
-        UNION 
+        
         CREATE TABLE IF NOT  EXISTS pagamento(
         CdPagamento int not null AUTO_INCREMENT,
         valor int not null,
@@ -28,7 +28,19 @@ api.scriptInicial = (req, res) => {
         data TIMESTAMP,
         PRIMARY KEY(CdPagamento),
         FOREIGN KEY(cpfJogador) REFERENCES Jogador(cpf) 
-        ); `, (error, results, fields) => {
+        );
+        
+        CREATE TABLE TIME(
+        cd_time int not null AUTO_INCREMENT,
+        nome VARCHAR(200),
+        PRIMARY KEY(cd_time));
+        
+        CREATE TABLE TIME_JOGADOR(
+        cpf_jogador int not null,
+        cd_time int not null,
+        PRIMARY KEY(cpf_jogador, cd_time),
+        FOREIGN KEY(cpf_jogador) REFERENCES JOGADOR(cpf),
+        FOREIGN KEY(cd_time) REFERENCES TIME(cd_time));`, (error, results, fields) => {
             if (error) {
                 console.log(error);
             } else {
@@ -113,6 +125,16 @@ api.listaJogadores = function (req, res) {
     });
 }
 
+api.listaJogadoresPagos = function (req, res) {
+    con.query('select * from jogador ' +
+        ' where exists(select * from pagamento ' +
+                      'where pagamento.cpfJogador = jogador.cpf ' + 
+                      ' AND DATEDIFF(CURDATE(), pagamento.data) > 30);', function(error, results){
+                            if(error) throw error;
+                            res.json(results);
+                      });
+}
+
 
 
 api.inserirJogador = function (req, res) {
@@ -135,6 +157,34 @@ api.deletarJogador = function (req, res) {
     });
 }
 
+
+api.inserirTime = function (req, res) {
+    time = req.body;
+    var sql = "INSERT INTO TIME(nome) ?";
+    var values = [[time.nome]];
+
+    con.query(sql,[values], function(err, result){
+        if(err) throw err;
+        console.log("Number of records inserted: " + result.affectedRows);
+
+        res.json({ message: "Time Cadastrado", code: 200});
+    }).end();
+
+}
+
+api.inserirJogadorTime = function(req, res){
+    jogadorTime = req.body;
+
+    var sql = "INSERT INTO TIME_JOGADOR(cpf_jogador, cd_time) ?";
+    var values = [[jogadorTime.cpf, jogadorTime.cdTime]];
+    con.query(sql, values, function(err, results){
+        if(err) throw err;
+        console.log("Number of records inserted: " + result.affectedRows);
+
+        res.json({ message: "Os jogadores pro Time foram cadastrados com sucesso" , code : 200});
+    }).end();
+}
+
 api.sortearTimes = function (req, res) {
 
 }
@@ -149,6 +199,15 @@ api.verificarStatusJogador = function (req, res) {
 }
 
 api.pontuarJogador = function (req, res) {
+    pontos = req.body;
+
+    var sql = "UPDATE Jogador SET nota = " + pontos.nota;
+    con.query(sql , function(err, result){
+        if(err) throw err;
+        
+        console.log("Number of records updated: " + result.affectedRows);
+        res.json({ message: "Nota para o jogador atualizada" , code : 200});
+    }).end();
 
 }
 

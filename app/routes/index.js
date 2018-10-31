@@ -23,4 +23,16 @@ module.exports  = function(app) {
     app.route('/api/pagamento/')
     .post(api.cadastraPagamento);
 
+    app.route('/api/jogadoresPagos')
+    .get(api.listaJogadoresPagos);
+
+    app.route('/api/time')
+    .post(api.inserirTime);
+
+    app.route('/api/jogadorTime')
+    .post(api.inserirJogadorTime);
+
+    app.route('api/pontuarJogador')
+    .put(api.pontuarJogador);
+
 };
