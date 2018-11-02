@@ -15,8 +15,7 @@ api.scriptInicial = (req, res) => {
     con.query(`CREATE TABLE IF NOT  EXISTS Jogador(
         cpf int not null PRIMARY KEY,
         nome varchar(200) not Null,
-        idade int not null,
-        status bool,
+        idade int not null,        
         nota int not null,
         telefone varchar(200) not null
         );    
@@ -40,7 +39,51 @@ api.scriptInicial = (req, res) => {
         cd_time int not null,
         PRIMARY KEY(cpf_jogador, cd_time),
         FOREIGN KEY(cpf_jogador) REFERENCES JOGADOR(cpf),
-        FOREIGN KEY(cd_time) REFERENCES TIME(cd_time));`, (error, results, fields) => {
+        FOREIGN KEY(cd_time) REFERENCES TIME(cd_time));
+        
+                
+        CREATE TABLE PARTIDA(
+            id_partida int not null AUTO_INCREMENT,
+            time1 int not null,
+            time2 int not null,
+            timeVencedor int,
+            placar varchar(10) not null,
+            melhorJogador int not null,
+            piorJogador int not null,
+            PRIMARY KEY(id_partida));
+
+    
+            ALTER TABLE PARTIDA
+            ADD CONSTRAINT fk_time01
+            FOREIGN KEY(time1)
+            REFERENCES time(cd_time)
+            ON DELETE NO ACTION
+            ON UPDATE NO ACTION,
+            ADD CONSTRAINT fk_time02
+            FOREIGN KEY(time2)
+            REFERENCES time(cd_time)
+            ON DELETE NO ACTION
+            ON UPDATE NO ACTION,
+            ADD CONSTRAINT fk_jogador01
+            FOREIGN KEY(melhorJogador)
+            REFERENCES jogador(cpf)
+            ON DELETE NO ACTION
+            ON UPDATE NO ACTION,
+            ADD CONSTRAINT fk_jogador02
+            FOREIGN KEY(piorJogador)
+            REFERENCES jogador(cpf)
+            ON DELETE NO ACTION
+            ON UPDATE NO ACTION;
+
+        CREATE TABLE GOLS(
+            partida int not null,
+            jogador int not null,
+            gols int not null,
+            PRIMARY KEY(partida, jogador),
+            FOREIGN KEY(partida) REFERENCES partida(id_partida),
+            FOREIGN KEY(jogador) REFERENCES jogador(cpf));
+
+    `, (error, results, fields) => {
             if (error) {
                 console.log(error);
             } else {
@@ -113,8 +156,7 @@ api.listaPagamentos = function(req, res){
         if(err) throw error;       
         res.json(results);
     });
-    
-    con.end();
+
 
 }
 
@@ -139,8 +181,8 @@ api.listaJogadoresPagos = function (req, res) {
 
 api.inserirJogador = function (req, res) {
     jogador = req.body;
-    var sql = "INSERT INTO JOGADOR (cpf, nome, idade, status, nota, telefone) VALUES ?";
-    var values = [[jogador.cpf, jogador.nome, jogador.idade, false, 0, jogador.telefone]];
+    var sql = "INSERT INTO JOGADOR (cpf, nome, idade, nota, telefone) VALUES ?";
+    var values = [[jogador.cpf, jogador.nome, jogador.idade, 0, jogador.telefone]];
 
     con.query(sql, [values], function (err, result) {
         if (err) throw err;
@@ -158,9 +200,18 @@ api.deletarJogador = function (req, res) {
 }
 
 
+api.listarTimes = function(req, res){
+    con.query('SELECT * from time order by nome', function(err, results){
+        if(err) throw err;
+        
+        res.json(results);
+    })
+
+}
+
 api.inserirTime = function (req, res) {
     time = req.body;
-    var sql = "INSERT INTO TIME(nome) ?";
+    var sql = "INSERT INTO TIME(nome) VALUES ?";
     var values = [[time.nome]];
 
     con.query(sql,[values], function(err, result){
@@ -168,66 +219,134 @@ api.inserirTime = function (req, res) {
         console.log("Number of records inserted: " + result.affectedRows);
 
         res.json({ message: "Time Cadastrado", code: 200});
-    }).end();
+    });
 
 }
 
 api.inserirJogadorTime = function(req, res){
     jogadorTime = req.body;
 
-    var sql = "INSERT INTO TIME_JOGADOR(cpf_jogador, cd_time) ?";
-    var values = [[jogadorTime.cpf, jogadorTime.cdTime]];
-    con.query(sql, values, function(err, results){
+    var sql = "INSERT INTO TIME_JOGADOR(cpf_jogador, cd_time) VALUES ?";
+    var values = [[jogadorTime.cpf, jogadorTime.time]];
+    con.query(sql, [values], function(err, results){
         if(err) throw err;
-        console.log("Number of records inserted: " + result.affectedRows);
+        console.log("Number of records inserted: " + results.affectedRows);
 
         res.json({ message: "Os jogadores pro Time foram cadastrados com sucesso" , code : 200});
-    }).end();
+    });
+
+    
 }
 
-api.sortearTimes = function (req, res) {
-
+api.listarTimeJogador = function(req, res){
+    con.query("select * from time_jogador order by cd_time", function(err, result){
+        if(err) throw err;
+        res.json(result);
+    })
 }
 
-
-api.alterarStatusPagamentoJogador = function (req, res) {
-
-}
-
-api.verificarStatusJogador = function (req, res) {
-
-}
 
 api.pontuarJogador = function (req, res) {
-    pontos = req.body;
+    jogador = req.body;
 
-    var sql = "UPDATE Jogador SET nota = " + pontos.nota;
+    var sql = "UPDATE Jogador SET nota = " + jogador.nota + " WHERE cpf = " + jogador.cpf;
     con.query(sql , function(err, result){
         if(err) throw err;
         
         console.log("Number of records updated: " + result.affectedRows);
-        res.json({ message: "Nota para o jogador atualizada" , code : 200});
-    }).end();
+        res.json({ message: "Nota para o jogador atualizada" , code : 200});        
+    });
 
+    
 }
 
 api.verificarCraqueDaPelada = function (req, res) {
-
-}
+    con.query("select nome from jogador where nota = (select MAX(nota) from jogador)", function(err, result){
+        if (err) throw err;
+        res.json(result);
+    });
+}  
 
 api.verificarBolaMuchaDaPelada = function (req, res) {
-
+    con.query("select nome from jogador where nota = (select MIN(nota) from jogador)", function(err, result){
+        if (err) throw err;
+        res.json(result);
+    });
 }
+
+api.inserirPartida = function(req, res){
+    partida = req.body;
+
+    var sql = "INSERT INTO PARTIDA(time1, time2, timeVencedor, placar, melhorJogador, piorJogador) VALUES ? ";
+    var values = [[partida.time1, partida.time2, partida.timeVencedor, partida.placar, partida.melhorJogador, partida.piorJogador]];
+
+    con.query(sql, [values], function(err, result){
+        if(err) throw err;
+        console.log("Number of records inserted: " + result.affectedRows);
+
+        res.json({ message: "Partida cadastrada com sucesso" , code : 200});
+    })
+}
+
+api.listarPartida = function(req, res){
+    con.query("SELECT * from partida order by id_partida", function(err, result){
+        if(err) throw err;
+        res.json(result);
+    });
+}
+
+api.inserirGols = function(req, res){
+    gols = req.body;
+
+    var sql = "INSERT INTO Gols(partida, jogador, gols) VALUES ?";
+    var values = [[gols.partida, gols.jogador, gols.gols]];
+    con.query(sql, [values], function(err, result){
+        if(err) throw err;
+        console.log("Number of records inserted: " + result.affectedRows);
+
+        res.json({ message: "Gols cadastrados com sucesso" , code : 200});
+
+    });
+}
+
+api.listarGols = function(req, res){
+    con.query("SELECT * from gols order by partida", function(err, result){
+        if(err) throw err;
+
+        res.json(result);
+    });
+}
+
+
+api.golsPorJogadores = function(req, res){
+    con.query("select nome, SUM(gols) gols from gols inner join jogador ON gols.jogador = jogador.cpf group by jogador", function(err, result){
+        if(err) throw err;
+        res.json(result);
+    })
+}
+
+api.golPorJogador = function(req, res){
+    con.query("select nome, SUM(gols) gols from gols inner join jogador ON gols.jogador = jogador.cpf WHERE jogador.cpf = " + req.params.jogador + " group by jogador"
+    , function(err, result){
+        if(err) throw err;
+        res.json(result);
+    });
+}
+
 
 api.exibirHistoricoMelhorJogadorBaseadoEmTempo = function (req, res){
 
 }
 
-api.exibirHistoricoPiorJogadorBaseadoEmTempo = function (req, res){
+api.exibirHistoricoPiorJogadorBaseadoEmTempo  = function (req, res){
 
 }
 
 api.jogadorQueFezMaisGols = function (req, res){
+    con.query( "select nome from jogador inner join gols ON jogador.cpf = gols.jogador WHERE gols.gols = (select MAX(gols) from gols)", function(err, result){
+        if(err) throw err;
+        res.json(result);
+    })
 
 }
 
@@ -243,9 +362,6 @@ api.exibirResultadosDaPartida = function (req, res) {
 
 }
 
-api.alterarStatusPagamentoJogador = function (req, res) {
-
-}
 
 api.sortearTimes = function (req, res) {
 
