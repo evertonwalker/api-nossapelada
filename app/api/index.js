@@ -95,21 +95,39 @@ api.scriptInicial = (req, res) => {
 
 }
 
-function inserirPagamento(valor, cpf, data) {
-    var sql = "INSERT INTO Pagamento (valor, cpfJogador, data) VALUES ?";
-    console.log(valor);
-    console.log(cpf);
-    console.log(data);
-    var values = [[valor, cpf, data]];
-    con.query(sql, [values], function (err, result) {
-        if (err) throw err;
-        return true;
-    })
-}
-
-
 api.cadastraPagamento = function (req, res) {
+
+    if (req.body.cpf === undefined) {
+        res.json({ code: 509, message: "Selecione um jogador para inserir o pagamento." });
+        return;
+    }
+
+    if (req.body.valor !== undefined) {
+        if (req.body.valor < 0) {
+            res.json({ code: 509, message: "O valor não pode ser menor que 0" });
+            return;
+        }
+    } else {
+        res.json({ code: 509, message: "O valor do pagamento não pode ser vazio" });
+        return;
+    }
+
+    if (req.body.data !== undefined) {
+        let data = new Date();
+        let dateSplit = req.body.data.split('-');
+        let dateResquest = new Date(dateSplit[0], dateSplit[1] - 1, dateSplit[2]);
+
+        if (dateResquest.getTime() < data.getTime()) {
+            res.json({ code: 509, message: "Não selecione uma data menor do que o dia atual" });
+            return;
+        }
+    } else {
+        res.json({ code: 509, message: "Selecione o dia do pagamento do jogador" });
+        return;
+    }
+
     pagamento = req.body;
+
     con.query("SELECT MAX(data) data from pagamento WHERE cpfJogador = " + pagamento.cpf, function (err, result, fields) {
         if (err) {
             console.log(err);
