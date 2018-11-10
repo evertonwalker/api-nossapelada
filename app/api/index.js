@@ -13,17 +13,17 @@ var con = mysql.createConnection({
 
 api.scriptInicial = (req, res) => {
     con.query(`CREATE TABLE IF NOT  EXISTS Jogador(
-        cpf int not null PRIMARY KEY,
+        cpf varchar(11) not null PRIMARY KEY,
         nome varchar(200) not Null,
         idade int not null,        
         nota int not null,
-        telefone varchar(200) not null
-        );    
-        
+        telefone varchar(11) not null
+        );  
+
         CREATE TABLE IF NOT  EXISTS pagamento(
         CdPagamento int not null AUTO_INCREMENT,
         valor int not null,
-        cpfJogador int not null,
+        cpfJogador varchar not null,
         data TIMESTAMP,
         PRIMARY KEY(CdPagamento),
         FOREIGN KEY(cpfJogador) REFERENCES Jogador(cpf) 
@@ -190,9 +190,73 @@ api.listaJogadoresPagos = function (req, res) {
 }
 
 
+function validarNomeSemNumeros(texto) {
+    return !!texto.match(/^[A-Za-záàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ ]+$/);
+}
+
+function ValidarCpf(cpf) {
+    return !!cpf.match(/^[0-9]{11}$/);
+}
+
+function validarIdade(idade) {
+    return !!idade.match(/^[0-9]{2}$/);
+}
 
 api.inserirJogador = function (req, res) {
+
+    if (req.body.nome !== undefined) {
+        retornoValidacao = validarNomeSemNumeros(req.body.nome);
+        if (!retornoValidacao) {
+            res.json({ code: 509, message: "O nome não está no padrão para ser salvo" });
+            return;
+        }
+    } else {
+        res.json({ code: 509, message: "O nome não pode ser vazio." });
+        return;
+    }
+
+    if (req.body.cpf !== undefined) {
+        retornoValidacao = ValidarCpf(req.body.cpf);
+        if (!retornoValidacao) {
+            res.json({ code: 509, message: "O cpf deve ter 11 caracteres e sendo apenas números." });
+            return;
+        }
+    } else {
+        res.json({ code: 509, message: "O cpf não pode ser vazio" });
+        return;
+    }
+
+    if (req.body.telefone !== undefined) {
+        retornoValidacao = ValidarCpf(req.body.telefone);
+        if (!retornoValidacao) {
+            res.json({ code: 509, message: "O número deve ter 11 caracteres e sendo 2 do ddd, e 9 referente ao telefone, todos númericos" });
+            return;
+        }
+    } else {
+        res.json({ code: 509, message: "O telefone não pode ser vazio." });
+        return;
+    }
+
+
+    if (req.body.idade !== undefined) {
+        if (req.body.idade > 0) {
+            let idade = `${req.body.idade}`;
+            if (idade.length < 2) {
+                res.json({ code: 509, message: "A idade deve ter apenas 2 caracteres e todos númericos" });
+                return;
+            }
+        } else {
+            res.json({ code: 509, message: "A idade não pdoe ser negativa" });
+            return;
+        }
+    } else {
+        res.json({ code: 509, message: "A idade não pode ser vazio." });
+        return;
+    }
+
+
     jogador = req.body;
+
     var sql = "INSERT INTO JOGADOR (cpf, nome, idade, nota, telefone) VALUES ?";
     var values = [[jogador.cpf, jogador.nome, jogador.idade, 0, jogador.telefone]];
 
