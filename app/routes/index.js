@@ -35,7 +35,7 @@ module.exports = function (app) {
         .get(api.listarTimes)
         .post(api.inserirTime);
 
-    app.get('/api/time/:nome', api.pegarIdTime);        
+    app.get('/api/time/:nome', api.pegarIdTime);
 
     app.route('/api/timejogador')
         .get(api.listarTimeJogador)
@@ -44,13 +44,21 @@ module.exports = function (app) {
     app.route('/api/pontuarJogador/')
         .put(api.pontuarJogador);
 
-    app.route('/api/partida')
+    app.route('/api/partida/')
         .get(api.listarPartida)
         .post(api.inserirPartida);
+
+    app.get('/api/partida/:id', api.pegarPartida);
+
+    app.post('/api/partidastart/', api.comecarPartida);
 
     app.route('/api/gols')
         .get(api.listarGols)
         .post(api.inserirGols);
+
+    app.post('/api/partidaend/', api.encerrarPartida);
+
+    app.get('/api/andamento/', api.verificarPartidaAndamento);
 
     app.route('/api/golsJogadores')
         .get(api.golsPorJogadores);

@@ -35,11 +35,12 @@ api.scriptInicial = (req, res) => {
         PRIMARY KEY(cd_time));
         
         CREATE TABLE TIME_JOGADOR(
-        cpf_jogador int not null,
-        cd_time int not null,
-        PRIMARY KEY(cpf_jogador, cd_time),
-        FOREIGN KEY(cpf_jogador) REFERENCES JOGADOR(cpf),
-        FOREIGN KEY(cd_time) REFERENCES TIME(cd_time));
+            id_time_jogador int not null AUTO_INCREMENT,
+            cpf_jogador varchar(11) not null,
+            cd_time int not null,
+            PRIMARY KEY(id_time_jogado),
+            FOREIGN KEY(cpf_jogador) REFERENCES JOGADOR(cpf),
+            FOREIGN KEY(cd_time) REFERENCES TIME(cd_time));
         
                 
         CREATE TABLE PARTIDA(
@@ -75,11 +76,11 @@ api.scriptInicial = (req, res) => {
             ON DELETE NO ACTION
             ON UPDATE NO ACTION;
 
-        CREATE TABLE GOLS(
+        CREATE TABLE GOL(
+            id int not null AUTO_INCREMENT PRIMARY KEY,
             partida int not null,
             jogador varchar(11) not null,
-            gols int not null,
-            PRIMARY KEY(partida, jogador),
+            gol int not null,
             FOREIGN KEY(partida) REFERENCES partida(id_partida),
             FOREIGN KEY(jogador) REFERENCES jogador(cpf));
 
@@ -313,7 +314,6 @@ api.listarTimes = function (req, res) {
 api.pegarIdTime = function (req, res) {
 
     var nomeTime = req.params.nome;
-    console.log(nomeTime);
     var sql = 'select cd_time from time where nome = ?';
     con.query(sql, [nomeTime], function (err, result) {
         if (err) {
@@ -415,17 +415,92 @@ api.verificarBolaMuchaDaPelada = function (req, res) {
 
 
 api.inserirPartida = function (req, res) {
-    partida = req.body;
 
-    var sql = "INSERT INTO PARTIDA(time1, time2, timeVencedor, placar, melhorJogador, piorJogador) VALUES ? ";
-    var values = [[partida.time1, partida.time2, partida.timeVencedor, partida.placar, partida.melhorJogador, partida.piorJogador]];
+    if (req.body.timeUm === undefined) {
+        res.json({ code: 509, message: "Por favor insira o parâmetro do timeUm" });
+        return;
+    }
+
+    if (req.body.timeDois === undefined) {
+        res.json({ code: 509, message: "Por favor insira o parâmetro do timeUm" });
+        return;
+    }
+
+    if (req.body.timeUm.jogadores.length !== req.body.timeDois.jogadores.length) {
+        res.json({ code: 509, message: "A quantidade dos jogadores dos times estão diferentes" });
+        return;
+    }
+
+    var sql = "INSERT INTO PARTIDA(time1, time2, status) VALUES ? ";
+    var values = [[req.body.timeUm.id, req.body.timeDois.id, "criada"]];
 
     con.query(sql, [values], function (err, result) {
-        if (err) throw err;
-        console.log("Number of records inserted: " + result.affectedRows);
-
-        res.json({ message: "Partida cadastrada com sucesso", code: 200 });
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("Number of records inserted: " + result.affectedRows);
+            res.json({ message: "Partida cadastrada com sucesso", code: 200 });
+        }
     })
+}
+
+api.pegarPartida = function (req, res) {
+
+    var idTime = req.params.id;
+    var sql = 'select * from partida where time1 = ?';
+    con.query(sql, [idTime], function (err, result) {
+        if (err) {
+            console.log(err);
+            return;
+        } else {
+            console.log(result[0]);
+            res.json({ code: 200, message: "Partida encontrada", partida: result[0] });
+        }
+    });
+
+
+}
+
+api.comecarPartida = function (req, res) {
+
+    var values = req.body.timeUm;
+    var sql = `UPDATE partida SET status = 'andamento' WHERE time1 = ?`
+
+    con.query(sql, [values], function (err, result) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("Number of records inserted: " + result.affectedRows);
+            res.json({ message: "Partida começada com sucesso", code: 200 });
+        }
+    });
+
+}
+
+api.encerrarPartida = function (req, res) {
+
+    var values = req.body.partida;
+    var sql = `UPDATE partida SET status = 'finalizada', timeVencedor = ${req.body.timeVencedor} WHERE id_partida = ?`
+
+    con.query(sql, [values], function (err, result) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("Number of records inserted: " + result.affectedRows);
+            res.json({ message: "Partida encerrada com sucesso", code: 200 });
+        }
+    });
+
+}
+
+api.verificarPartidaAndamento = function (req, res) {
+    con.query(`select * from partida where status = 'andamento';`, function (error, results, fields) {
+        if (error) {
+            console.log(error);
+        } else {
+            res.json(results);
+        }
+    });
 }
 
 api.listarPartida = function (req, res) {
@@ -438,13 +513,15 @@ api.listarPartida = function (req, res) {
 api.inserirGols = function (req, res) {
     gols = req.body;
 
-    var sql = "INSERT INTO Gols(partida, jogador, gols) VALUES ?";
-    var values = [[gols.partida, gols.jogador, gols.gols]];
+    var sql = "INSERT INTO Gol(partida, jogador, gol) VALUES ?";
+    var values = [[gols.partida, gols.jogador, gols.gol]];
     con.query(sql, [values], function (err, result) {
-        if (err) throw err;
-        console.log("Number of records inserted: " + result.affectedRows);
-
-        res.json({ message: "Gols cadastrados com sucesso", code: 200 });
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("Number of records inserted: " + result.affectedRows);
+            res.json({ message: "Gol cadastrados com sucesso", code: 200 });
+        }
 
     });
 }
@@ -456,15 +533,6 @@ api.listarGols = function (req, res) {
         res.json(result);
     });
 }
-
-api.criarPartida = (req, res) => {
-
-
-
-
-
-}
-
 
 api.golsPorJogadores = function (req, res) {
     con.query("select nome, SUM(gols) gols from gols inner join jogador ON gols.jogador = jogador.cpf group by jogador", function (err, result) {
