@@ -1,7 +1,7 @@
 var api = require('../api');
 
-module.exports  = function(app) {
-    
+module.exports = function (app) {
+
     app.get('/api/cargainicial', api.scriptInicial);
 
     app.get('/', (req, res) => {
@@ -10,53 +10,55 @@ module.exports  = function(app) {
     });
 
     app.route('/api/jogador/')
-    .get(api.listaJogadores)
-    .post(api.inserirJogador);
+        .get(api.listaJogadores)
+        .post(api.inserirJogador);
 
     app.route('/api/melhorJogador/')
-    .get(api.verificarCraqueDaPelada);
-    
-   app.route('/api/piorJogador/')
-   .get(api.verificarBolaMuchaDaPelada);
+        .get(api.verificarCraqueDaPelada);
+
+    app.route('/api/piorJogador/')
+        .get(api.verificarBolaMuchaDaPelada);
 
     app.route('/api/jogador/:cpf')
-    .delete(api.deletarJogador);
+        .delete(api.deletarJogador);
 
     app.route('/api/pagamento/')
-    .get(api.listaPagamentos);
+        .get(api.listaPagamentos);
 
     app.route('/api/pagamento/')
-    .post(api.cadastraPagamento);
+        .post(api.cadastraPagamento);
 
     app.route('/api/jogadoresPagos')
-    .get(api.listaJogadoresPagos);
+        .get(api.listaJogadoresPagos);
 
     app.route('/api/time')
-    .get(api.listarTimes)
-    .post(api.inserirTime);
+        .get(api.listarTimes)
+        .post(api.inserirTime);
 
-    app.route('/api/jogadorTime')
-    .get(api.listarTimeJogador)
-    .post(api.inserirJogadorTime);
+    app.get('/api/time/:nome', api.pegarIdTime);        
+
+    app.route('/api/timejogador')
+        .get(api.listarTimeJogador)
+        .post(api.inserirJogadorTime);
 
     app.route('/api/pontuarJogador/')
-    .put(api.pontuarJogador);
+        .put(api.pontuarJogador);
 
     app.route('/api/partida')
-    .get(api.listarPartida)
-    .post(api.inserirPartida);
+        .get(api.listarPartida)
+        .post(api.inserirPartida);
 
     app.route('/api/gols')
-    .get(api.listarGols)
-    .post(api.inserirGols);
+        .get(api.listarGols)
+        .post(api.inserirGols);
 
     app.route('/api/golsJogadores')
-    .get(api.golsPorJogadores);
+        .get(api.golsPorJogadores);
 
     app.route('/api/golsPorJogador/:jogador')
-    .get(api.golPorJogador);
-    
+        .get(api.golPorJogador);
+
     app.route('/api/artilheiro')
-    .get(api.jogadorQueFezMaisGols);
+        .get(api.jogadorQueFezMaisGols);
 
 };

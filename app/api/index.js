@@ -23,7 +23,7 @@ api.scriptInicial = (req, res) => {
         CREATE TABLE IF NOT  EXISTS pagamento(
         CdPagamento int not null AUTO_INCREMENT,
         valor int not null,
-        cpfJogador varchar not null,
+        cpfJogador varchar(11) not null,
         data TIMESTAMP,
         PRIMARY KEY(CdPagamento),
         FOREIGN KEY(cpfJogador) REFERENCES Jogador(cpf) 
@@ -47,11 +47,11 @@ api.scriptInicial = (req, res) => {
             time1 int not null,
             time2 int not null,
             timeVencedor int,
-            placar varchar(10) not null,
-            melhorJogador int not null,
-            piorJogador int not null,
+            status ENUM('criada', 'andamento', 'finalizada'),
+            placar varchar(10),
+            melhorJogador varchar(11),
+            piorJogador varchar(11),
             PRIMARY KEY(id_partida));
-
     
             ALTER TABLE PARTIDA
             ADD CONSTRAINT fk_time01
@@ -77,7 +77,7 @@ api.scriptInicial = (req, res) => {
 
         CREATE TABLE GOLS(
             partida int not null,
-            jogador int not null,
+            jogador varchar(11) not null,
             gols int not null,
             PRIMARY KEY(partida, jogador),
             FOREIGN KEY(partida) REFERENCES partida(id_partida),
@@ -117,7 +117,7 @@ api.cadastraPagamento = function (req, res) {
         let dateSplit = req.body.data.split('-');
         let dateResquest = new Date(dateSplit[0], dateSplit[1] - 1, dateSplit[2]);
 
-        if (dateResquest.getTime() < data.getTime()) {
+        if (dateResquest.getTime() <= data.getTime()) {
             res.json({ code: 509, message: "Não selecione uma data menor do que o dia atual" });
             return;
         }
@@ -310,32 +310,70 @@ api.listarTimes = function (req, res) {
 
 }
 
+api.pegarIdTime = function (req, res) {
+
+    var nomeTime = req.params.nome;
+    console.log(nomeTime);
+    var sql = 'select cd_time from time where nome = ?';
+    con.query(sql, [nomeTime], function (err, result) {
+        if (err) {
+            console.log(err);
+            return;
+        } else {
+            res.json({ codigoTime: result[0].cd_time });
+        }
+    });
+}
+
 api.inserirTime = function (req, res) {
-    time = req.body;
+
+    if (req.body.timeUm !== undefined) {
+        timeUm = req.body.timeUm;
+    } else {
+        res.json({ code: 509, message: "Time um não está definido" });
+        return;
+    }
+
+    if (req.body.timeDois !== undefined) {
+        timeDois = req.body.timeDois;
+    } else {
+        res.json({ code: 509, message: "Time Dois não está definido" });
+        return;
+    }
+
     var sql = "INSERT INTO TIME(nome) VALUES ?";
-    var values = [[time.nome]];
+    var values = [[timeUm], [timeDois]];
 
     con.query(sql, [values], function (err, result) {
-        if (err) throw err;
-        console.log("Number of records inserted: " + result.affectedRows);
+        if (err) {
+            console.log(err);
+            return;
+        } else {
+            console.log("Number of records inserted: " + result.affectedRows);
+            res.json({ message: "Times Cadastrados", code: 200 });
+        }
 
-        res.json({ message: "Time Cadastrado", code: 200 });
     });
+
+
+
 
 }
 
+
 api.inserirJogadorTime = function (req, res) {
-    jogadorTime = req.body;
 
+    time = req.body;
+    var values = time.jogadores.map(j => [j.cpf, time.id]);
     var sql = "INSERT INTO TIME_JOGADOR(cpf_jogador, cd_time) VALUES ?";
-    var values = [[jogadorTime.cpf, jogadorTime.time]];
     con.query(sql, [values], function (err, results) {
-        if (err) throw err;
-        console.log("Number of records inserted: " + results.affectedRows);
-
-        res.json({ message: "Os jogadores pro Time foram cadastrados com sucesso", code: 200 });
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("Number of records inserted: " + results.affectedRows);
+            res.json({ message: "Os jogadores pro Time foram cadastrados com sucesso", code: 200 });
+        }
     });
-
 
 }
 
@@ -374,6 +412,7 @@ api.verificarBolaMuchaDaPelada = function (req, res) {
         res.json(result);
     });
 }
+
 
 api.inserirPartida = function (req, res) {
     partida = req.body;
@@ -418,6 +457,14 @@ api.listarGols = function (req, res) {
     });
 }
 
+api.criarPartida = (req, res) => {
+
+
+
+
+
+}
+
 
 api.golsPorJogadores = function (req, res) {
     con.query("select nome, SUM(gols) gols from gols inner join jogador ON gols.jogador = jogador.cpf group by jogador", function (err, result) {
@@ -435,13 +482,7 @@ api.golPorJogador = function (req, res) {
 }
 
 
-api.exibirHistoricoMelhorJogadorBaseadoEmTempo = function (req, res) {
 
-}
-
-api.exibirHistoricoPiorJogadorBaseadoEmTempo = function (req, res) {
-
-}
 
 api.jogadorQueFezMaisGols = function (req, res) {
     con.query("select nome from jogador inner join gols ON jogador.cpf = gols.jogador WHERE gols.gols = (select MAX(gols) from gols)", function (err, result) {
@@ -451,22 +492,10 @@ api.jogadorQueFezMaisGols = function (req, res) {
 
 }
 
-api.gravarAposta = function (req, res) {
-
-}
-
-api.exibirResultadoAposta = function (req, res) {
-
-}
-
-api.exibirResultadosDaPartida = function (req, res) {
-
-}
 
 
-api.sortearTimes = function (req, res) {
 
-}
+
 
 
 
