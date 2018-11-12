@@ -504,7 +504,7 @@ api.verificarPartidaAndamento = function (req, res) {
 }
 
 api.listarPartida = function (req, res) {
-    con.query("SELECT * from partida order by id_partida", function (err, result) {
+    con.query(`SELECT * from partida where status = 'finalizada' order by id_partida; `, function (err, result) {
         if (err) throw err;
         res.json(result);
     });
